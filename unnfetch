@@ -1,0 +1,98 @@
+#!/bin/bash
+
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+MAGENTA='\033[35m'
+CYAN='\033[36m'
+WHITE='\033[37m'
+BRIGHT_RED='\033[91m'
+BRIGHT_GREEN='\033[92m'
+BRIGHT_YELLOW='\033[93m'
+RESET='\033[0m'
+BOLD='\033[1m'
+UNDERLINE='\033[4m'
+
+architecture=$(hostnamectl | grep -E 'Architecture' | awk -F': ' '{print $2}')
+model=$(hostnamectl | grep -E 'Model' | awk -F': ' '{print $2}')
+vendor=$(hostnamectl | grep -E 'Vendor' | awk -F': ' '{print $2}')
+
+if [ -f "/etc/os-release" ]; then
+    source /etc/os-release
+else
+    PRETTY_NAME="Unknown"
+    VERSION="unknown"
+fi
+
+VER="${VERSION:-${BUILD_ID:-unknown}}"
+
+computer="$vendor $model"
+user=$(whoami)
+hostname=$(hostname)
+userfull="$user@$hostname"
+
+width=$(tput cols)
+
+center() {
+    local str="$1"
+    local str_length=${#str}
+    local spaces=$(( (width - str_length) / 2 ))
+    printf "%${spaces}s%s\n" "" "$str"
+}
+
+available_memory_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+total_memory_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_memory_mb=$((available_memory_kb / 1024))
+total_memory_mb=$((total_memory_kb / 1024))
+used_memory_mb=$((total_memory_mb - available_memory_mb))
+
+COLOR="${ANSI_COLOR:-$BLUE}"
+
+convert_to_ansi_color() {
+    case $1 in
+        "RED") echo '\033[31m' ;;
+        "GREEN") echo '\033[32m' ;;
+        "YELLOW") echo '\033[33m' ;;
+        "BLUE") echo '\033[34m' ;;
+        "MAGENTA") echo '\033[35m' ;;
+        "CYAN") echo '\033[36m' ;;
+        "WHITE") echo '\033[37m' ;;
+        "BRIGHT_RED") echo '\033[91m' ;;
+        "BRIGHT_GREEN") echo '\033[92m' ;;
+        "BRIGHT_YELLOW") echo '\033[93m' ;;
+        "RESET") echo '\033[0m' ;;
+        *) echo "$RESET" ;;  # Default to RESET if invalid color
+    esac
+}
+
+# Function to convert RGB color to ANSI 24-bit color
+convert_rgb_to_ansi() {
+    local r=$1
+    local g=$2
+    local b=$3
+    echo -e "\033[38;2;${r};${g};${b}m"
+}
+
+# Example RGB values for the color you provided (23, 147, 209)
+rgb_color="38;2;23;147;209"
+IFS=';' read -r -a rgb <<< "$rgb_color"  # Split the string into an array
+
+TRUE_COLOR=$(convert_rgb_to_ansi "${rgb[1]}" "${rgb[2]}" "${rgb[3]}")
+
+if command -v figlet &>/dev/null; then
+    echo -e "${TRUE_COLOR}$(figlet -f small $PRETTY_NAME)${RESET}"
+    
+else
+    echo "$PRETTY_NAME"
+fi
+cpu_model=$(awk -F': ' '/model name/ {print $2}' /proc/cpuinfo | head -n 1)
+echo -e "$userfull"
+echo -e "=============================   "
+echo -e "${TRUE_COLOR}OS${RESET}: $PRETTY_NAME $architecture"
+echo -e "${TRUE_COLOR}Version${RESET}: $VER"
+echo -e "${TRUE_COLOR}Model${RESET}: $model"
+echo -e "${TRUE_COLOR}Vendor${RESET}: $vendor"
+echo -e "${TRUE_COLOR}Memory${RESET}: ${used_memory_mb}/${total_memory_mb}MB"
+echo -e "${TRUE_COLOR}CPU${RESET}: $cpu_model"
+echo -e "${TRUE_COLOR}DE${RESET}: ${XDG_SESSION_DESKTOP:-PRETTY_NAME}"
