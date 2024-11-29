@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 RED='\033[31m'
@@ -96,3 +97,4 @@ echo -e "${TRUE_COLOR}Vendor${RESET}: $vendor"
 echo -e "${TRUE_COLOR}Memory${RESET}: ${used_memory_mb}/${total_memory_mb}MB"
 echo -e "${TRUE_COLOR}CPU${RESET}: $cpu_model"
 echo -e "${TRUE_COLOR}DE${RESET}: ${XDG_SESSION_DESKTOP:-PRETTY_NAME}"
+echo -e "${TRUE_COLOR}Kernel:${RESET}: $(uname -r)"
