@@ -82,10 +82,10 @@ IFS=';' read -r -a rgb <<< "$rgb_color"  # Split the string into an array
 TRUE_COLOR=$(convert_rgb_to_ansi "${rgb[1]}" "${rgb[2]}" "${rgb[3]}")
 
 if command -v figlet &>/dev/null; then
-    echo -e "${TRUE_COLOR}$(figlet -f small $PRETTY_NAME)${RESET}"
+    echo -e "${TRUE_COLOR}$(figlet -f small $NAME)${RESET}"
     
 else
-    echo "$PRETTY_NAME"
+    echo "$NAME"
 fi
 cpu_model=$(awk -F': ' '/model name/ {print $2}' /proc/cpuinfo | head -n 1)
 echo -e "$userfull"
