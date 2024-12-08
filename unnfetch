@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 RED='\033[31m'
@@ -15,9 +14,17 @@ RESET='\033[0m'
 BOLD='\033[1m'
 UNDERLINE='\033[4m'
 
-architecture=$(hostnamectl | grep -E 'Architecture' | awk -F': ' '{print $2}')
-model=$(hostnamectl | grep -E 'Model' | awk -F': ' '{print $2}')
-vendor=$(hostnamectl | grep -E 'Vendor' | awk -F': ' '{print $2}')
+architecture=$(uname -m)
+if [ -f "/sys/class/dmi/id/product_name" ]; then
+    model=$(cat /sys/class/dmi/id/product_name)
+else
+    model="Unknown"
+fi
+if [ -f "/sys/class/dmi/id/sys_vendor" ]; then
+    vendor=$(cat /sys/class/dmi/id/sys_vendor)
+else
+    vendor="Unknown"
+fi
 
 if [ -f "/etc/os-release" ]; then
     source /etc/os-release
@@ -26,13 +33,12 @@ else
     VERSION="unknown"
 fi
 
-VER="${VERSION:-${BUILD_ID:-unknown}}"
+VER="${VERSION:-${BUILD_ID:-${VERSION_ID:-unknown}}}"
 
 computer="$vendor $model"
 user=$(whoami)
-hostname=$(hostname)
+hostname=$(uname -n)
 userfull="$user@$hostname"
-
 width=$(tput cols)
 
 center() {
@@ -82,19 +88,26 @@ IFS=';' read -r -a rgb <<< "$rgb_color"  # Split the string into an array
 TRUE_COLOR=$(convert_rgb_to_ansi "${rgb[1]}" "${rgb[2]}" "${rgb[3]}")
 
 if command -v figlet &>/dev/null; then
-    echo -e "${TRUE_COLOR}$(figlet -f small $NAME)${RESET}"
-    
+    echo -e "   ${TRUE_COLOR}$(figlet -f small $NAME)${RESET}"
+
 else
-    echo "$NAME"
+    echo "  $NAME"
 fi
+
+# Clean up the CPU model retrieval to avoid repetition
 cpu_model=$(awk -F': ' '/model name/ {print $2}' /proc/cpuinfo | head -n 1)
-echo -e "$userfull"
+
+
+if [ -z "$XDG_DESKTOP_VERSION" ]; then
+	XDG_DESKTOP_VERSION="Unknown"
+fi
+echo -e "   $userfull"
 echo -e "=============================   "
-echo -e "${TRUE_COLOR}OS${RESET}: $PRETTY_NAME $architecture"
-echo -e "${TRUE_COLOR}Version${RESET}: $VER"
-echo -e "${TRUE_COLOR}Model${RESET}: $model"
-echo -e "${TRUE_COLOR}Vendor${RESET}: $vendor"
-echo -e "${TRUE_COLOR}Memory${RESET}: ${used_memory_mb}/${total_memory_mb}MB"
-echo -e "${TRUE_COLOR}CPU${RESET}: $cpu_model"
-echo -e "${TRUE_COLOR}DE${RESET}: ${XDG_SESSION_DESKTOP:-PRETTY_NAME}"
-echo -e "${TRUE_COLOR}Kernel:${RESET}: $(uname -r)"
+echo -e "   ${TRUE_COLOR}OS${RESET}: $PRETTY_NAME $architecture"
+echo -e "   ${TRUE_COLOR}Version${RESET}: $VER"
+echo -e "   ${TRUE_COLOR}Model${RESET}: $model"
+echo -e "   ${TRUE_COLOR}Vendor${RESET}: $vendor"
+echo -e "   ${TRUE_COLOR}Memory${RESET}: ${used_memory_mb}/${total_memory_mb}MB"
+echo -e "   ${TRUE_COLOR}CPU${RESET}: $cpu_model"
+echo -e "   ${TRUE_COLOR}DE${RESET}: $XDG_SESSION_DESKTOP"
+echo -e "   ${TRUE_COLOR}Kernel:${RESET}: $(uname -r)"
